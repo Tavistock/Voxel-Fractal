@@ -1,10 +1,16 @@
 var scene, camera, renderer, onMouseDownPosition, origin, 
 raycaster, cube, brush, vector, cubeGeo, cubeColor, cubeMat;
 var base = [];
-var fractal = [];
-divisor =3;
-var radious = 600, theta = 45, onMouseDownTheta = 45, phi = 60, onMouseDownPhi = 60,
+var fractal = {};
+var radious = 600, theta = 90, onMouseDownTheta = 90, phi = 90, onMouseDownPhi = 90,
   isMouseDown = false, isShiftDown = false;
+
+var divisor = 3;
+var cubeSize = 64;
+var miniCubeSize = cubeSize/divisor;
+var cubeColor = Math.random() * 0xffffff;
+var cubeMat = new THREE.MeshLambertMaterial( { color: cubeColor } );
+
 var middle = new THREE.Vector3( 40.5 , 0, 40.5 );
  
   init();
@@ -12,7 +18,6 @@ var middle = new THREE.Vector3( 40.5 , 0, 40.5 );
 
 function init() {
 
-	// Create the scene and set the scene size.
 	scene = new THREE.Scene();
 	var WIDTH = window.innerWidth,
     HEIGHT = window.innerHeight;
@@ -20,7 +25,19 @@ function init() {
 	// Create a renderer and add it to the DOM.
   renderer = new THREE.WebGLRenderer({antialias:true});
   renderer.setSize(WIDTH, HEIGHT);
+  renderer.setClearColor(0x333F47, 1);
+
   document.body.appendChild(renderer.domElement);
+  document.body.style.margin = 0;
+  document.body.style.overflow = "hidden";
+
+  var info = document.createElement( 'div' );
+  info.style.position = 'absolute';
+  info.style.top = '5px';
+  info.style.width = '100%';
+  info.style.textAlign = 'center';
+  info.innerHTML = '<span style="color: #444; background-color: #ddd; border-bottom: 1px solid #ddd; padding: 8px 10px; text-transform: uppercase;"><strong>click</strong>: add voxel, <strong>drag</strong>: rotate | <a href="javascript:save();">save</a></span>';
+  document.body.appendChild( info );
 
   camera = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 1, 10000);
   camera.position.x = radious * Math.sin( theta * Math.PI / 360 ) * Math.cos( phi * Math.PI / 360 );
@@ -28,16 +45,6 @@ function init() {
   camera.position.z = radious * Math.cos( theta * Math.PI / 360 ) * Math.cos( phi * Math.PI / 360 );
   camera.lookAt( middle );
   scene.add(camera);
-
-  window.addEventListener('resize', function() {
-    var WIDTH = window.innerWidth,
-        HEIGHT = window.innerHeight;
-    renderer.setSize(WIDTH, HEIGHT);
-    camera.aspect = WIDTH / HEIGHT;
-    camera.updateProjectionMatrix();
-  });
-
-  renderer.setClearColor(0x333F47, 1);
 
   // LIGHT
   var ambientLight = new THREE.AmbientLight( 0x404040 );
@@ -57,23 +64,19 @@ function init() {
   directionalLight2.position.normalize();
   scene.add( directionalLight2 );
 
-  cubeGeo = new THREE.BoxGeometry(81, 81, 81);
-  cubeColor = Math.random() * 0xffffff;
-  cubeMat = new THREE.MeshLambertMaterial( { color: cubeColor } );
-
   // Make the base cube
-  for (var i = 0; i < 3; i++) {
-    for (var j = 0; j < 3; j++) {
-      for (var k = 0; k < 3; k++) {
+  for (var i = 0; i < divisor; i++) {
+    for (var j = 0; j < divisor; j++) {
+      for (var k = 0; k < divisor; k++) {
         // if ( (j===1&&k===1) || (k===1&&i===1) || (j===1&&i===1)) { continue; }
         var voxel = new THREE.Mesh(
-          cubeGeo,
-          new THREE.MeshLambertMaterial( { color: cubeColor, visible: false } )
+          new THREE.BoxGeometry( cubeSize, cubeSize, cubeSize ),
+          new THREE.MeshLambertMaterial( { color: cubeColor, transparent: true, opacity:0.4 } )
         );
         voxel.position.set(
-          -40.5 + ( i * 81 ),
-          -40.5 + ( j * 81 ),
-          -40.5 + ( k * 81 )
+          ( i * cubeSize ),
+          ( j * cubeSize ),
+          ( k * cubeSize )
         );
         scene.add(voxel);
         base.push(voxel);
@@ -88,20 +91,20 @@ function init() {
   fractal_cords.map(function (arr) {
     arr.map( function (cord) {
       var voxel = new THREE.Mesh(
-        new THREE.BoxGeometry(27, 27, 27),
+        new THREE.BoxGeometry( miniCubeSize, miniCubeSize, miniCubeSize ),
         new THREE.MeshLambertMaterial({ color: cubeColor })
       );
       voxel.position.set(cord.x,cord.y,cord.z);
       scene.add(voxel);
-      fractal.push(""+cord.x+cord.y+cord.z);
+      fractal[cord.x=","+cord.y+","+cord.z] = true;
     });
   });
 
   brush = new THREE.Mesh(
-    cubeGeo,
+    new THREE.BoxGeometry( cubeSize, cubeSize, cubeSize ),
     new THREE.MeshLambertMaterial( { color: cubeColor, transparent: true, opacity: 0.4 } )
   );
-  brush.position.y = 2000;
+  brush.position.y = 10000;
   brush.overdraw = true;
   scene.add( brush );
 
@@ -123,7 +126,17 @@ function init() {
 
   document.addEventListener( 'keydown', onDocumentKeyDown, false );
   document.addEventListener( 'keyup', onDocumentKeyUp, false );
+
+  window.addEventListener('resize', function() {
+    var WIDTH = window.innerWidth,
+        HEIGHT = window.innerHeight;
+    renderer.setSize(WIDTH, HEIGHT);
+    camera.aspect = WIDTH / HEIGHT;
+    camera.updateProjectionMatrix();
+    animate();
+  });
 }
+
 
 function onDocumentMouseMove (event) {
   event.preventDefault();
@@ -182,26 +195,26 @@ function onDocumentMouseUp (event) {
           base.splice( base.indexOf( intersect.object ), 1 );
       } else {
         var voxel = new THREE.Mesh(
-          cubeGeo,
+          new THREE.BoxGeometry( cubeSize, cubeSize, cubeSize ),
           new THREE.MeshLambertMaterial( { color: cubeColor, visible: false } )
         );
         voxel.position.copy( intersect.point ).add( intersect.face.normal );
-        voxel.position.divideScalar( 81 ).floor().multiplyScalar( 81 ).addScalar( 40.5 );
+        voxel.position.addScalar( cubeSize/2 ).divideScalar( cubeSize ).floor().multiplyScalar( cubeSize );
         scene.add( voxel );
         base.push( voxel );
 
         fractal_cords = fractalize(base);
         fractal_cords.map(function (arr) {
           arr.map( function (cord) {
-            var voxel = new THREE.Mesh(
-              new THREE.BoxGeometry(27, 27, 27),
+            cord_name = cord.x+","+cord.y+","+cord.z;
+            if (fractal[cord_name] !== true) {
+              var voxel = new THREE.Mesh(
+              new THREE.BoxGeometry( miniCubeSize, miniCubeSize, miniCubeSize ),
               new THREE.MeshLambertMaterial({ color: cubeColor })
-            );
-            voxel.position.set(cord.x,cord.y,cord.z);
-            cord_name = ''+cord.x+cord.y+cord.z;
-            if (fractal.indexOf(cord_name) === -1) {
+              );
+              voxel.position.set(cord.x,cord.y,cord.z);
               scene.add(voxel);
-              fractal.push(cord_name);
+              fractal[cord_name] = true;
             }
           });
         });
@@ -223,6 +236,7 @@ function onDocumentMouseWheel( event ) {
   camera.updateMatrix();
   camera.lookAt( middle );
 
+  interact();
   animate();
 
 }
@@ -246,12 +260,12 @@ function interact () {
     intersect = intersects[ 0 ].object != brush ? intersects[ 0 ] : intersects[ 1 ];
     if ( intersect ) {
       brush.position.copy( intersect.point ).add( intersect.face.normal );
-      brush.position.divideScalar( 81 ).floor().multiplyScalar( 81 ).addScalar( 40.5 );
+      brush.position.addScalar( cubeSize/2 ).divideScalar( cubeSize ).floor().multiplyScalar( cubeSize );
 
       return;
     }
   }
-  brush.position.y = 2000;
+  brush.position.y = 10000;
 }
 
 function animate() {
@@ -263,20 +277,48 @@ function animate() {
   stats.update();
  }
 
-function fractalize (base_cords) {
-  var offset_base = base_cords.map( function (voxel) {
-    pos_offset = new THREE.Vector3();
-    pos_offset.subVectors(origin.position, voxel.position);
-    pos_offset.divideScalar(81);
-    return pos_offset;
+function fractalize (base_vectors) {
+  var size = origin.geometry.parameters.width;
+  var origin_vector = origin.position;
+  offset_base = createOffsetMap(base_vectors, origin_vector, size);
+  fractal_base = scaleOffsetMap(base_vectors, offset_base, size);
+  return fractal_base;
+}
+
+ function createOffsetMap (base_vectors, origin_vector, origin_size) {
+  return base_vectors.map( function (vector) {
+    var offset = new THREE.Vector3();
+    offset.subVectors(origin_vector, vector.position);
+    offset.divideScalar(origin_size);
+    return offset;
   });
-  fractal_base = base_cords.map( function (voxel) {
+ }
+
+function magicNumber (num) {
+  switch (num) {
+    case 2:
+      return 4;
+    case 3:
+      return 3;
+    case 4:
+      return (8/3);
+  }
+}
+
+ function scaleOffsetMap (base_vectors, offset_base, scale) {
+  return base_vectors.map( function (vector) {
     return offset_base.map(function (offset) {
-      offset_clone = offset.clone();
-      offset_clone.divideScalar(divisor);
-      offset_clone.multiplyScalar(-81);
-      return offset_clone.add(voxel.position).addScalar(-81/3);
+      var scaled_clone = offset.clone();
+      scaled_clone.multiplyScalar(-scale/divisor).add(vector.position);
+      scaled_clone.addScalar(-scale/magicNumber(divisor));
+      // that 3 at the end is magic and only works for a divisor of 3 for a divisor of 2:4, 3:3, 4:2.66
+      return scaled_clone;
     });
   });
-  return fractal_base;
+ }
+
+function save () {
+  brush.position.y = 10000;
+  animate();
+  window.open( renderer.domElement.toDataURL('image/png'), 'mywindow' );
 }
