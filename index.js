@@ -1,9 +1,24 @@
-var scene, camera, renderer, onMouseDownPosition, origin, 
-raycaster, cube, brush, vector, cubeGeo, cubeColor, cubeMat;
+var scene;
+var camera;
+var renderer;
+
+var raycaster;
+var vector;
+var brush; // UI element
+
+
+var onMouseDownPosition;
+var radious = 600;
+var theta = 90;
+var onMouseDownTheta = 90;
+var phi = 90;
+var onMouseDownPhi = 90;
+var isMouseDown = false;
+var isShiftDown = false;
+
+var origin; 
 var base = [];
 var fractal = {};
-var radious = 600, theta = 90, onMouseDownTheta = 90, phi = 90, onMouseDownPhi = 90,
-  isMouseDown = false, isShiftDown = false;
 
 var divisor = 3;
 var cubeSize = 64;
@@ -46,7 +61,7 @@ function init() {
   camera.lookAt( middle );
   scene.add(camera);
 
-  // LIGHT
+  // LIGHTS
   var ambientLight = new THREE.AmbientLight( 0x404040 );
   scene.add( ambientLight );
 
