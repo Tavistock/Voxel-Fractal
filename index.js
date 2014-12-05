@@ -28,8 +28,8 @@ var cubeMat = new THREE.MeshLambertMaterial( { color: cubeColor } );
 
 var middle = new THREE.Vector3( 40.5 , 0, 40.5 );
  
-  init();
-  animate();
+init();
+animate();
 
 function init() {
 
@@ -285,9 +285,6 @@ function interact () {
 
 function animate() {
   // requestAnimationFrame( animate );
-
-  // Render the scene.
-  // fractalize();
   renderer.render(scene, camera);
   stats.update();
  }
