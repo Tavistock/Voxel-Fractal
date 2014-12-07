@@ -31,6 +31,10 @@ var middle = new THREE.Vector3( 40.5 , 0, 40.5 );
 init();
 animate();
 
+function setUpScene(){
+  
+}
+
 function init() {
 
 	scene = new THREE.Scene();
